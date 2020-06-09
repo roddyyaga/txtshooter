@@ -6,4 +6,4 @@
 
 (package
  (name txtshooter)
- (depends dune websocket-wt-unix base stdio lwt_ppx ppx_yojson hmap))
+ (depends dune websocket-lwt-unix base stdio lwt_ppx ppx_yojson hmap))
