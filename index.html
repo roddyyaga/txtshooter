@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+    <style>
+    body {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #AAAAAA;
+      background-color: #040404;
+      font-family: monospace;
+      scrollbar-color: #222222 #101010;
+    }
+
+    .everything {
+        margin: auto auto;
+        max-width: 99ch;
+    }
+
+    .container {
+        margin: auto auto;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .content {
+        max-width: 72ch;
+    }
+
+    .secondary {
+        color: #AAA;
+    }
+
+    .commandHistory {
+      color: #666666;
+    }
+
+    #messages {
+      background-color: #101010;
+      overflow-y: scroll;
+      height: 80vh;
+      padding-left: 1em;
+    }
+
+    #input {
+      width: 100%;
+      box-sizing: border-box;
+      background-color: #101010;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #AAAAAA;
+      font-family: monospace;
+      border: none;
+      padding-top: 2rem;
+      padding-left: 1em;
+    }
+
+    </style>
+  <title>shooter.txt</title>
+</head>
+<body>
+  <div class="everything">
+    <div id="messages"></div>
+    <form name="command">
+      <input id="input" type="text" name="message" placeholder="..." autocomplete="off" autofocus>
+    </form>
+  </div>
+  <script>
+    function updateScroll(){
+        var element = document.getElementById("messages");
+        element.scrollTop = element.scrollHeight;
+    }
+
+    let socket = new WebSocket("ws://localhost:1337");
+
+    document.forms.command.onsubmit = function() {
+      let message = this.message.value;
+      let commandElem = document.createElement('div');
+      commandElem.textContent = "> " + message;
+      commandElem.className = "commandHistory";
+      document.getElementById('messages').append(commandElem);
+      socket.send(message);
+      document.forms.command.reset();
+      updateScroll();
+      document.getElementById('input').placeholder = "";
+      return false;
+    };
+
+    socket.onmessage = function(event) {
+      let message = event.data;
+
+      let messageElem = document.createElement('div');
+      messageElem.textContent = message;
+      document.getElementById('messages').append(messageElem);
+      updateScroll();
+    }
+  </script>
+</body>
+</html>

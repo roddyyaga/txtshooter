@@ -1,0 +1,5 @@
+(library
+ (name lib)
+ (libraries base stdio ecs ws)
+ (preprocess
+  (pps lwt_ppx)))

@@ -1,0 +1,5 @@
+(executable
+ (name server)
+ (libraries websocket-lwt-unix base stdio ws lib ecs)
+ (preprocess
+  (pps lwt_ppx ppx_yojson)))
