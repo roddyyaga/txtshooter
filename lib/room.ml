@@ -88,3 +88,11 @@ let in_direction direction room =
   | "west" -> Ok room.west
   | "east" -> Ok room.east
   | _ -> Error ()
+
+let reachable ~source ~destination =
+  let adjacent =
+    List.filter_opt
+      [ !!source.north; !!source.south; !!source.west; !!source.east ]
+  in
+  Ecs.Typed.(source = destination)
+  || List.mem adjacent destination ~equal:Ecs.Typed.( = )

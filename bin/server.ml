@@ -39,6 +39,7 @@ let rec process_events events =
         | [ "fire" ] -> fire player
         | [ "go"; direction ] -> move player direction
         | [ "help" ] -> help player
+        | [ "help"; "2" ] -> help2 player
         | [ "reload" ] -> reload player
         | "say" :: _rest ->
             let original_case = String.split ~on:' ' message in
@@ -49,9 +50,13 @@ let rec process_events events =
       process_events events
 
 let rec game_loop events =
-  let%lwt () = process_events events in
-  let%lwt () = Lwt_main.yield () in
-  World.distribute_dropped_bullets ();
+  let do_loop () =
+    let%lwt () = process_events events in
+    let%lwt () = Lwt_main.yield () in
+    World.distribute_dropped_bullets ();
+    Lwt.return_unit
+  in
+  let%lwt () = Lwt.join [ do_loop (); Lwt_unix.sleep (1.0 /. 60.0) ] in
   game_loop events
 
 let on_connect client =

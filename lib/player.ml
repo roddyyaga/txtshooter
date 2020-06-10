@@ -44,9 +44,14 @@ let aim source name =
   let target = find_by_name name in
   let message =
     match target with
-    | Some target ->
-        source =: { !!source with target = Some target };
-        Printf.sprintf "You aim your gun at %s." !!target.name
+    | Some target -> (
+        match
+          Room.reachable ~source:!!source.room ~destination:!!target.room
+        with
+        | true ->
+            source =: { !!source with target = Some target };
+            Printf.sprintf "You aim your gun at %s." !!target.name
+        | false -> Printf.sprintf "%s is not in range!" !!target.name )
     | None -> "There is no player with that name..."
   in
   send source message
@@ -60,6 +65,16 @@ let examine_self source =
 
 let unknown_command source message =
   Printf.sprintf "Unknown command '%s'" message |> send source
+
+let unaim_if_out_of_range player =
+  match !!player.target with
+  | Some target ->
+      if not (Room.reachable ~source:!!player.room ~destination:!!target.room)
+      then (
+        player =: { !!player with target = None };
+        send player (Printf.sprintf "You lost track of %s!" !!target.name) )
+      else Lwt.return_unit
+  | None -> Lwt.return_unit
 
 let move player direction =
   let room = !!(!!player.room) in
@@ -79,6 +94,10 @@ let move player direction =
       let%lwt () =
         send player
           (Printf.sprintf "You went %s." (String.capitalize direction))
+      in
+      let%lwt () =
+        Ecs.Typed.select Components.player
+        |> Lwt_list.iter_s unaim_if_out_of_range
       in
       look player
 
@@ -111,7 +130,7 @@ let say player speech =
     players
 
 let help player =
-  {| Common commands:
+  {|Common commands:
   look - view your surroundings
   look [direction] - view the location to the North/South/East/West
   examine self - see information about yourself
@@ -122,10 +141,12 @@ let help player =
   say [message] - say something to other players
   scores - view the leaderboard
   help - display this
-  help 2 - view further help|}
+  help 2 - view further help
+
+You can shoot players in the the same room as you or adjacent ones.|}
   |> send player
 
 let help2 player =
   {| Some commands have abbreviations:
-  'l' and 'x' foor look/examine|}
+  'l' and 'x' for look/examine|}
   |> send player

@@ -143,13 +143,15 @@ module Server = struct
     Lwt_list.iter_p (fun client -> Client.send client message) (clients server)
 
   let close { clients; _ } Client.{ id; client } =
-    let _, client_status = Hashtbl.find_exn clients id in
-    Hashtbl.remove clients id;
-    let open Websocket_lwt_unix in
-    let open Websocket in
-    let%lwt () = Connected_client.send client (Frame.close 1000) in
-    client_status := Closed;
-    Lwt.return_unit
+    match Hashtbl.find clients id with
+    | None -> (* Already deleted *) Lwt.return_unit
+    | Some (_, client_status) ->
+        Hashtbl.remove clients id;
+        let open Websocket_lwt_unix in
+        let open Websocket in
+        let%lwt () = Connected_client.send client (Frame.close 1000) in
+        client_status := Closed;
+        Lwt.return_unit
 
   let close_all server =
     Lwt_list.iter_p (fun client -> close server client) (clients server)
