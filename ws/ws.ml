@@ -123,11 +123,8 @@ module Server = struct
                     | None -> Lwt.return_unit )
                 | _other -> Lwt.return_unit)
               (fun exn ->
-                match exn with
-                | End_of_file ->
-                    Hashtbl.remove clients client_id;
-                    Lwt_log.error ~exn "Client error"
-                | other -> Lwt.fail other)
+                Hashtbl.remove clients client_id;
+                Lwt_log.error ~exn "Client error, removing")
           in
           loop ())
     in
