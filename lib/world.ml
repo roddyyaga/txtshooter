@@ -109,3 +109,7 @@ let remove_player target_client =
 
 let spawn_room _player_opt =
   List.random_element_exn [ fountain_room; other_room ]
+
+let kills : (Ecs.Entity.t, int) Dict.t = Dict.create (module Ecs.Entity)
+
+let deaths : (Ecs.Entity.t, int) Dict.t = Dict.create (module Ecs.Entity)

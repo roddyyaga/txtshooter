@@ -100,6 +100,16 @@ let reload player =
   | true, false -> send player "You don't have any ammunition to reload!"
   | false, _ -> send player "Your gun is already fully loaded."
 
+let say player speech =
+  let message = Printf.sprintf "%s says \"%s\"" !!player.name speech in
+  let%lwt () = send player (Printf.sprintf "You said \"%s\"" speech) in
+  let players = Ecs.Typed.select Components.player in
+  Lwt_list.iter_s
+    (fun player' ->
+      if not Ecs.Typed.(player' = player) then send player' message
+      else Lwt.return_unit)
+    players
+
 let help player =
   {| Common commands:
   look - view your surroundings
@@ -109,6 +119,8 @@ let help player =
   aim [player name] - set your sights on a player
   fire - shoot at the player you are aiming at
   reload - reload your gun
+  say [message] - say something to other players
+  scores - view the leaderboard
   help - display this
   help 2 - view further help|}
   |> send player

@@ -25,11 +25,13 @@ let rec process_events events =
       let%lwt () = Player.look new_player in
       Player.send new_player "Enter 'help' for a list of commands."
   | Some (Command (client, message)) ->
-      let message = String.lowercase message in
+      let lowercase_message = String.lowercase message in
       let%lwt () =
         let player = World.find_player client in
         let open Player in
-        match String.split ~on:' ' message |> expand_abbreviations with
+        match
+          String.split ~on:' ' lowercase_message |> expand_abbreviations
+        with
         | [ "look" ] -> look player
         | [ "look"; "self" ] -> examine_self player
         | [ "look"; direction ] -> player |> look_in direction
@@ -38,7 +40,11 @@ let rec process_events events =
         | [ "go"; direction ] -> move player direction
         | [ "help" ] -> help player
         | [ "reload" ] -> reload player
-        | _other -> unknown_command player message
+        | "say" :: _rest ->
+            let original_case = String.split ~on:' ' message in
+            say player (List.tl_exn original_case |> String.concat ~sep:" ")
+        | [ "scores" ] -> scoreboard player
+        | _other -> unknown_command player lowercase_message
       in
       process_events events
 
