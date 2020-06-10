@@ -64,7 +64,7 @@
   <div class="everything">
     <div id="messages"></div>
     <form name="command">
-      <input id="input" type="text" name="message" placeholder="..." autocomplete="off" autofocus>
+      <input id="input" type="text" name="message" placeholder="..." autocomplete="off" onblur="this.focus()" autofocus>
     </form>
   </div>
   <script>
@@ -73,7 +73,7 @@
         element.scrollTop = element.scrollHeight;
     }
 
-    let socket = new WebSocket("ws://localhost:1337");
+    let socket = new WebSocket("wss://txtshooter.roddymacsween.co.uk:1336");
 
     document.forms.command.onsubmit = function() {
       let message = this.message.value;
@@ -84,7 +84,7 @@
       socket.send(message);
       document.forms.command.reset();
       updateScroll();
-      document.getElementById('input').placeholder = "";
+      // document.getElementById('input').placeholder = "";
       return false;
     };
 

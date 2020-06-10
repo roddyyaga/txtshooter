@@ -1,0 +1,7 @@
+txtshooter.roddymacsween.co.uk:1336 {
+  reverse_proxy localhost:1337
+}
+
+txtshooter.roddymacsween.co.uk {
+  file_server
+}
