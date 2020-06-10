@@ -66,8 +66,24 @@ let select2i c1 c2 =
   let c2s = Hmap.get c2 !component_maps in
   Dict.combine c1s c2s |> Dict.to_alist
 
+let filter component ~f =
+  Hmap.get component !component_maps |> Dict.filter_inplace ~f
+
+let map component ~f = Hmap.get component !component_maps |> Dict.map_inplace ~f
+
+let mapi component ~f =
+  Hmap.get component !component_maps
+  |> Dict.mapi_inplace ~f:(fun ~key ~data -> f key data)
+
+let filter_map component ~f =
+  Hmap.get component !component_maps |> Dict.filter_map_inplace ~f
+
 module Typed = struct
   type 'a t = 'a component * Entity.t
+
+  let entity (_component, entity) = entity
+
+  let ( = ) t t' = Entity.(entity t = entity t')
 
   let get (component, entity) = get_exn entity component
 

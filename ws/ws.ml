@@ -66,7 +66,7 @@ module Server = struct
     }
 
   let run { port; next_id; next_id_lock; clients; _ } ?on_connect ?on_close
-      handler =
+      ?on_client_error handler =
     let server =
       let open Websocket_lwt_unix in
       establish_server
@@ -124,7 +124,10 @@ module Server = struct
                 | _other -> Lwt.return_unit)
               (fun exn ->
                 Hashtbl.remove clients client_id;
-                Lwt_log.error ~exn "Client error, removing")
+                let%lwt () = Lwt_log.error ~exn "Client error, removing" in
+                match on_client_error with
+                | Some f -> f client
+                | None -> Lwt.return_unit)
           in
           loop ())
     in

@@ -72,11 +72,40 @@ let () =
   Room.join twisty_passage_E twisty_passage_6 West_east;
   Room.join twisty_passage_6 twisty_passage_7 West_east
 
+let distribute_dropped_bullets () =
+  let players = Ecs.Typed.select Components.player in
+  Ecs.filter_map Components.item ~f:(fun ({ name; room; _ } as item) ->
+      let keep = Some item in
+      let destroy = None in
+      match name with
+      | "bullet" -> (
+          let players_in_room =
+            List.filter players ~f:(fun player ->
+                Ecs.Typed.(!!player.room = room))
+          in
+          let player_to_give = List.random_element players_in_room in
+          match player_to_give with
+          | Some player ->
+              let player' =
+                Player.{ !!player with stored_ammo = !!player.stored_ammo + 1 }
+              in
+              (* TODO - clean up? *)
+              Lwt.ignore_result @@ Player.send player "You picked up a bullet.";
+              player =: player';
+              destroy
+          | None -> keep )
+      | _ -> keep)
+
 let find_player target_client =
   let players = Ecs.Typed.select Components.player in
   List.find_exn players ~f:(fun player ->
       let open Ws.Client.Id in
       Ws.Client.id !!player.Player.client = Ws.Client.id target_client)
+
+let remove_player target_client =
+  Ecs.filter Components.player ~f:(fun player ->
+      let open Ws.Client.Id in
+      not (Ws.Client.id player.Player.client = Ws.Client.id target_client))
 
 let spawn_room _player_opt =
   List.random_element_exn [ fountain_room; other_room ]

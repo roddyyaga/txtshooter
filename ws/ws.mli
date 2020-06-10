@@ -29,6 +29,7 @@ module Server : sig
     t ->
     ?on_connect:(Client.t -> unit Lwt.t) ->
     ?on_close:(Client.t -> string -> unit Lwt.t) ->
+    ?on_client_error:(Client.t -> unit Lwt.t) ->
     (Client.t -> string -> unit Lwt.t) ->
     unit Lwt.t
 

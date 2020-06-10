@@ -45,6 +45,7 @@ let rec process_events events =
 let rec game_loop events =
   let%lwt () = process_events events in
   let%lwt () = Lwt_main.yield () in
+  World.distribute_dropped_bullets ();
   game_loop events
 
 let on_connect client =
@@ -52,7 +53,13 @@ let on_connect client =
   Queue.enqueue events (Event.New_player client) |> Lwt.return
 
 let on_close client _message =
+  World.remove_player client;
   Stdio.printf "Client %d connection closed\n%!" (int_id client) |> Lwt.return
+
+let on_client_error client =
+  World.remove_player client;
+  Stdio.printf "Client %d connection closed due to error\n%!" (int_id client)
+  |> Lwt.return
 
 let handle client message =
   Queue.enqueue events (Event.Command (client, message));
@@ -66,4 +73,6 @@ let () = Lwt.async (fun () -> game_loop events)
 
 let () = Stdio.print_endline "Game loop started"
 
-let () = Lwt_main.run (Ws.Server.run ~on_connect server handle)
+let () =
+  Lwt_main.run
+    (Ws.Server.run ~on_connect ~on_close ~on_client_error server handle)

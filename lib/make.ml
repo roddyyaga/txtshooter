@@ -23,9 +23,18 @@ struct
     let name = new_name current_players in
     make_new_player ~name ~client
 
+  let unaim_aiming_at target_player =
+    Ecs.map Components.player ~f:(fun player ->
+        match player.target with
+        | Some target_player' when Ecs.Typed.(target_player = target_player') ->
+            { player with target = None }
+        | Some _ -> player
+        | None -> player)
+
   let die player =
     let old_player = !!player in
     let player' = make_new_player ~name:!!player.name ~client:!!player.client in
+    unaim_aiming_at player;
     player =: player';
     let%lwt () = send player "You died! :-(" in
     List.init old_player.stored_ammo ~f:(fun _ ->

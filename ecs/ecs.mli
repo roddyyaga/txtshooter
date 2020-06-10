@@ -38,18 +38,30 @@ val select2 : 'a component -> 'b component -> ('a * 'b) list
 
 val select2i : 'a component -> 'b component -> (Entity.t * ('a * 'b)) list
 
+val filter : 'a component -> f:('a -> bool) -> unit
+
+val map : 'a component -> f:('a -> 'a) -> unit
+
+val mapi : 'a component -> f:(Entity.t -> 'a -> 'a) -> unit
+
+val filter_map : 'a component -> f:('a -> 'a option) -> unit
+
 module Typed : sig
   type 'a t
+
+  val entity : 'a t -> Entity.t
+
+  val ( = ) : 'a t -> 'a t -> bool
+
+  val make : 'a component -> 'a -> 'a t
+
+  val map : ('a -> 'a) -> 'a t -> 'a t
 
   val get : 'a t -> 'a
 
   val set : 'a t -> 'a -> unit
 
   val select : 'a component -> 'a t list
-
-  val make : 'a component -> 'a -> 'a t
-
-  val map : ('a -> 'a) -> 'a t -> 'a t
 end
 
 module Infix : sig

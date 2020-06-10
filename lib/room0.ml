@@ -1,5 +1,4 @@
 type t = {
-  id: int;
   name: string;
   description: string;
   north: t Ecs.Typed.t option;

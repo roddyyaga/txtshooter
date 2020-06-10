@@ -2,13 +2,9 @@ open Base
 open Ecs.Infix
 include Room0
 
-let next_id = ref 0
-
 let make name description =
-  next_id := !next_id + 1;
   Ecs.Typed.make Components.room
     {
-      id = !next_id;
       name;
       description;
       north = None;
@@ -35,21 +31,21 @@ let look room =
     | Some room -> Printf.sprintf "To the %s you see %s." direction !!room.name
     | None -> ""
   in
-  let n_message = direction_msg "North" room.north in
-  let s_message = direction_msg "South" room.south in
-  let w_message = direction_msg "West" room.west in
-  let e_message = direction_msg "East" room.east in
+  let n_message = direction_msg "North" !!room.north in
+  let s_message = direction_msg "South" !!room.south in
+  let w_message = direction_msg "West" !!room.west in
+  let e_message = direction_msg "East" !!room.east in
 
   let players =
     Ecs.select Components.player
-    |> List.filter ~f:(fun player -> !!(player.Player0.room).id = room.id)
+    |> List.filter ~f:(fun player -> Ecs.Typed.(player.Player0.room = room))
   in
 
   let open Utils.String_helpers in
   let items_message =
     let items =
       Ecs.select Components.item
-      |> List.filter ~f:(fun item -> !!(item.Item.room).id = room.id)
+      |> List.filter ~f:(fun item -> Ecs.Typed.(item.Item.room = room))
     in
     match items with
     | [] -> ""
@@ -81,7 +77,7 @@ let look room =
         Printf.sprintf "In here %s %s." (are players) names_string
   in
 
-  Printf.sprintf "%s.\n%s %s %s %s %s %s%s\n" room.name room.description
+  Printf.sprintf "%s.\n%s %s %s %s %s %s%s\n" !!room.name !!room.description
     n_message s_message w_message e_message players_message items_message
   |> String.capitalize
 
