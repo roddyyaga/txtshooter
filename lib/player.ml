@@ -21,7 +21,7 @@ let send player message =
   |> Lwt_list.iter_s (Ws.Client.send !!player.client)
 
 let look player =
-  let message = !!player.room |> Room.look in
+  let message = !!player.room |> Room.look !!player in
   send player message
 
 let look_in direction player =
@@ -29,7 +29,7 @@ let look_in direction player =
     match Room.in_direction direction !!(!!player.room) with
     | Error () -> Printf.sprintf "'%s' not recognised as a direction" direction
     | Ok None -> "There's nothing in that direction!"
-    | Ok (Some room) -> Room.look room
+    | Ok (Some room) -> Room.look !!player room
   in
   send player message
 

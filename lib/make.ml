@@ -83,7 +83,7 @@ struct
     let compare (p1, _) (p2, _) =
       let kills1, kills2 = (get_kills p1, get_kills p2) in
       let deaths1, deaths2 = (get_deaths p1, get_deaths p2) in
-      if kills1 = kills2 then Int.compare deaths1 deaths2
+      if Int.(kills1 = kills2) then Int.compare deaths1 deaths2
       else Int.compare kills2 kills1
       (* Sort in descending order *)
     in

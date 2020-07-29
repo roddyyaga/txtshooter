@@ -8,3 +8,5 @@ type t = {
   inventory: (Ecs.Entity.t, int) Dict.t;
   client: Ws.Client.t;
 }
+
+let ( = ) p1 p2 = p1.name = p2.name

@@ -25,7 +25,7 @@ let join first_room second_room axis =
       first_room =: { !!first_room with east = Some second_room };
       second_room =: { !!second_room with west = Some first_room }
 
-let look room =
+let look looking_player room =
   let direction_msg direction room_opt =
     match room_opt with
     | Some room -> Printf.sprintf "To the %s you see %s." direction !!room.name
@@ -71,7 +71,9 @@ let look room =
     | players ->
         let names_string =
           players
-          |> List.map ~f:(fun p -> p.Player0.name)
+          |> List.map ~f:(fun p ->
+                 if Player0.(p = looking_player) then p.Player0.name
+                 else Printf.sprintf "%s (you)" p.Player0.name)
           |> Utils.list_with_and
         in
         Printf.sprintf "In here %s %s." (are players) names_string
