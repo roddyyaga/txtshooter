@@ -140,10 +140,28 @@ let help player =
   reload - reload your gun
   say [message] - say something to other players
   scores - view the leaderboard
+  map - view a map
   help - display this
   help 2 - view further help
 
 You can shoot players in the the same room as you or adjacent ones.|}
+  |> send player
+
+let map player =
+  {|T - T - T
+|       |
+T - F - T
+|   |   |
+T - C - T
+|   |   |
+T - O - T
+|       |
+T - T - T
+
+T = twisty passage
+F = fountain room
+C = central room
+O = other (non-fountain) room|}
   |> send player
 
 let help2 player =

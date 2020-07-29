@@ -40,6 +40,7 @@ let rec process_events events =
         | [ "go"; direction ] -> move player direction
         | [ "help" ] -> help player
         | [ "help"; "2" ] -> help2 player
+        | [ "map" ] -> map player
         | [ "reload" ] -> reload player
         | "say" :: _rest ->
             let original_case = String.split ~on:' ' message in
