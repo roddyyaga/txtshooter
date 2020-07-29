@@ -47,7 +47,7 @@ struct
     |> List.iter ~f:Fn.id;
     Dict.incr World.kills (Ecs.Typed.entity source);
     Dict.incr World.deaths (Ecs.Typed.entity target);
-    Lwt.return_unit
+    look target
 
   let damage ~source ~target amount =
     let player' = { !!target with health = !!target.health - amount } in
