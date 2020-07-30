@@ -40,7 +40,7 @@ struct
     let player' = make_new_player ~name:!!target.name ~client:!!target.client in
     unaim_aiming_at target;
     target =: player';
-    let%lwt () = send target "You died! :-(" in
+    send target "You died! :-(";
     List.init old_player.stored_ammo ~f:(fun _ ->
         ignore
         @@ Ecs.Typed.make Components.item (Item.make Bullet old_player.room))
@@ -52,10 +52,10 @@ struct
   let damage ~source ~target amount =
     let player' = { !!target with health = !!target.health - amount } in
     target =: player';
-    if !!target.health <= 0 then
-      let%lwt () = die ~source ~target in
-      true |> Lwt.return
-    else false |> Lwt.return
+    if !!target.health <= 0 then (
+      die ~source ~target;
+      true )
+    else false
 
   let fire source =
     match !!source.target with
@@ -64,15 +64,13 @@ struct
         if !!source.loaded_ammo < 1 then send source "Your gun isn't loaded!"
         else (
           decr_ammo source;
-          let%lwt () =
-            send source (Printf.sprintf "You shot %s!" !!target.name)
-          in
+          send source (Printf.sprintf "You shot %s!" !!target.name);
           let target_message =
             Printf.sprintf "You were shot by %s!" !!source.name
           in
-          let%lwt () = send target target_message in
-          let%lwt killed = damage ~source ~target 20 in
-          if killed then send source "You killed them!" else Lwt.return_unit )
+          send target target_message;
+          let killed = damage ~source ~target 20 in
+          if killed then send source "You killed them!" )
 
   let scoreboard player =
     let open Dict.Infix in

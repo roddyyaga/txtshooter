@@ -57,6 +57,8 @@ module Typed : sig
 
   val map : ('a -> 'a) -> 'a t -> 'a t
 
+  val iter : 'a t -> f:('a -> unit) -> unit
+
   val get : 'a t -> 'a
 
   val set : 'a t -> 'a -> unit

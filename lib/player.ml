@@ -16,9 +16,7 @@ let new_name players =
     ~f:(fun name -> not (List.mem current_names name ~equal:String.equal))
     possible_names
 
-let send player message =
-  message |> String.split_lines
-  |> Lwt_list.iter_s (Ws.Client.send !!player.client)
+let send player message = Network.send !!player.client message
 
 let look player =
   let message = !!player.room |> Room.look !!player in
@@ -73,8 +71,7 @@ let unaim_if_out_of_range player =
       then (
         player =: { !!player with target = None };
         send player (Printf.sprintf "You lost track of %s!" !!target.name) )
-      else Lwt.return_unit
-  | None -> Lwt.return_unit
+  | None -> ()
 
 let move player direction =
   let room = !!(!!player.room) in
@@ -91,14 +88,8 @@ let move player direction =
   | Ok None -> send player "There is nothing in that direction..."
   | Ok (Some target_room) ->
       player =: { !!player with room = target_room };
-      let%lwt () =
-        send player
-          (Printf.sprintf "You went %s." (String.capitalize direction))
-      in
-      let%lwt () =
-        Ecs.Typed.select Components.player
-        |> Lwt_list.iter_s unaim_if_out_of_range
-      in
+      send player (Printf.sprintf "You went %s." (String.capitalize direction));
+      Ecs.Typed.select Components.player |> List.iter ~f:unaim_if_out_of_range;
       look player
 
 let reload player =
@@ -121,12 +112,11 @@ let reload player =
 
 let say player speech =
   let message = Printf.sprintf "%s says \"%s\"" !!player.name speech in
-  let%lwt () = send player (Printf.sprintf "You said \"%s\"" speech) in
+  send player (Printf.sprintf "You said \"%s\"" speech);
   let players = Ecs.Typed.select Components.player in
-  Lwt_list.iter_s
-    (fun player' ->
-      if not Ecs.Typed.(player' = player) then send player' message
-      else Lwt.return_unit)
+  List.iter
+    ~f:(fun player' ->
+      if not Ecs.Typed.(player' = player) then send player' message)
     players
 
 let help player =

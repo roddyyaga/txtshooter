@@ -78,6 +78,8 @@ let mapi component ~f =
 let filter_map component ~f =
   Hmap.get component !component_maps |> Dict.filter_map_inplace ~f
 
+let iter component ~f = Hmap.get component !component_maps |> Dict.iter ~f
+
 module Typed = struct
   type 'a t = 'a component * Entity.t
 
@@ -99,6 +101,8 @@ module Typed = struct
       (selecti component)
 
   let map f (component, entity) = make component (f (get (component, entity)))
+
+  let iter (component, _entity) ~f = iter component ~f
 end
 
 module Infix = struct

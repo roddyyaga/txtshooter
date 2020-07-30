@@ -90,7 +90,7 @@ let distribute_dropped_bullets () =
                 Player.{ !!player with stored_ammo = !!player.stored_ammo + 1 }
               in
               (* TODO - clean up? *)
-              Lwt.ignore_result @@ Player.send player "You picked up a bullet.";
+              Player.send player "You picked up a bullet.";
               player =: player';
               destroy
           | None -> keep )

@@ -19,14 +19,14 @@ let new_player client =
 let rec process_events events =
   let open Event in
   match Queue.dequeue events with
-  | None -> Lwt.return_unit
+  | None -> ()
   | Some (New_player client) ->
       let new_player = new_player client in
-      let%lwt () = Player.look new_player in
+      Player.look new_player;
       Player.send new_player "Enter 'help' for a list of commands."
   | Some (Command (client, message)) ->
       let lowercase_message = String.lowercase message in
-      let%lwt () =
+      let () =
         let player = World.find_player client in
         let open Player in
         match
@@ -52,7 +52,7 @@ let rec process_events events =
 
 let rec game_loop events =
   let do_loop () =
-    let%lwt () = process_events events in
+    process_events events;
     let%lwt () = Lwt_main.yield () in
     World.distribute_dropped_bullets ();
     Lwt.return_unit
