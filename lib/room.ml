@@ -4,15 +4,7 @@ include Room0
 
 let make name description =
   Ecs.Typed.make Components.room
-    {
-      name;
-      description;
-      north = None;
-      south = None;
-      west = None;
-      east = None;
-      contents = Dict.create (module Ecs.Entity);
-    }
+    { name; description; north = None; south = None; west = None; east = None }
 
 type axis = North_south | West_east
 
@@ -24,6 +16,13 @@ let join first_room second_room axis =
   | West_east ->
       first_room =: { !!first_room with east = Some second_room };
       second_room =: { !!second_room with west = Some first_room }
+
+let contents room =
+  Ecs.select2i Components.item Components.location
+  |> List.filter ~f:(fun (_entity, (_item, item_room)) ->
+         Ecs.Typed.(item_room = room))
+  |> List.map ~f:(fun (entity, (_item, _item_room)) ->
+         Ecs.Typed.of_entity_exn entity Components.item)
 
 let look looking_player room =
   let direction_msg direction room_opt =
@@ -43,16 +42,13 @@ let look looking_player room =
 
   let open Utils.String_helpers in
   let items_message =
-    let items =
-      Ecs.select Components.item
-      |> List.filter ~f:(fun item -> Ecs.Typed.(item.Item.room = room))
-    in
+    let items = contents room |> List.map ~f:Ecs.Typed.get in
     match items with
     | [] -> ""
     | items ->
         let item_counts =
           let counts = Dict.create (module String) in
-          items |> List.iter ~f:(fun item -> Dict.incr counts item.Item.name);
+          items |> List.iter ~f:(fun item -> Dict.incr counts item.Item0.name);
           counts
         in
         let numbered_item_string =

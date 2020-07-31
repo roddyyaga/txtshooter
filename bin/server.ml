@@ -13,8 +13,11 @@ let expand_abbreviations split_message =
 
 let new_player client =
   let players = Ecs.select Components.player in
-  let new_player_c = Player.new_player client players in
-  Ecs.Typed.make Components.player new_player_c
+  let new_player_c = Player.new_player players in
+  let player = Ecs.Typed.make Components.player new_player_c in
+  Ecs.set (Ecs.Typed.entity player) Components.client client;
+  Ecs.set (Ecs.Typed.entity player) Components.targetable ();
+  player
 
 let rec process_events events =
   let open Event in

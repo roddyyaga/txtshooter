@@ -1,5 +1,4 @@
 open Base
-open Ecs.Infix
 
 type t = { rooms: Room.t list; players: (Ws.Client.Id.t, Player.t) Dict.t }
 
@@ -72,13 +71,17 @@ let () =
   Room.join twisty_passage_E twisty_passage_6 West_east;
   Room.join twisty_passage_6 twisty_passage_7 West_east
 
+let () = ignore (Item.make Barrel fountain_room)
+
 let distribute_dropped_bullets () =
   let players = Ecs.Typed.select Components.player in
-  Ecs.filter_map Components.item ~f:(fun ({ name; room; _ } as item) ->
+  Ecs.filter_mapi Components.item ~f:(fun entity ({ Item0.name; _ } as item) ->
       let keep = Some item in
       let destroy = None in
       match name with
       | "bullet" -> (
+          let open Ecs.Infix in
+          let room = entity >! Components.location in
           let players_in_room =
             List.filter players ~f:(fun player ->
                 Ecs.Typed.(!!player.room = room))
@@ -100,12 +103,14 @@ let find_player target_client =
   let players = Ecs.Typed.select Components.player in
   List.find_exn players ~f:(fun player ->
       let open Ws.Client.Id in
-      Ws.Client.id !!player.Player.client = Ws.Client.id target_client)
+      let client = Ecs.(get_exn (Typed.entity player) Components.client) in
+      Ws.Client.id client = Ws.Client.id target_client)
 
 let remove_player target_client =
-  Ecs.filter Components.player ~f:(fun player ->
+  Ecs.filteri Components.player ~f:(fun entity _player ->
+      let client = Ecs.get_exn entity Components.client in
       let open Ws.Client.Id in
-      not (Ws.Client.id player.Player.client = Ws.Client.id target_client))
+      not (Ws.Client.id client = Ws.Client.id target_client))
 
 let spawn_room _player_opt =
   List.random_element_exn [ fountain_room; other_room ]
