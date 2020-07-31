@@ -24,7 +24,11 @@ type 'a component
 
 val component : 'a Component.t -> 'a component
 
+val get : Entity.t -> 'a component -> 'a option
+
 val get_exn : Entity.t -> 'a component -> 'a
+
+val has : Entity.t -> 'a component -> bool
 
 val set : Entity.t -> 'a component -> 'a -> unit
 
@@ -40,11 +44,15 @@ val select2i : 'a component -> 'b component -> (Entity.t * ('a * 'b)) list
 
 val filter : 'a component -> f:('a -> bool) -> unit
 
+val filteri : 'a component -> f:(Entity.t -> 'a -> bool) -> unit
+
 val map : 'a component -> f:('a -> 'a) -> unit
 
 val mapi : 'a component -> f:(Entity.t -> 'a -> 'a) -> unit
 
 val filter_map : 'a component -> f:('a -> 'a option) -> unit
+
+val filter_mapi : 'a component -> f:(Entity.t -> 'a -> 'a option) -> unit
 
 module Typed : sig
   type 'a t
@@ -55,7 +63,15 @@ module Typed : sig
 
   val make : 'a component -> 'a -> 'a t
 
-  val map : ('a -> 'a) -> 'a t -> 'a t
+  val of_entity : Entity.t -> 'a component -> 'a t option
+
+  val coerce : 'a t -> 'b component -> 'b t option
+
+  val of_entity_exn : Entity.t -> 'a component -> 'a t
+
+  val coerce_exn : 'a t -> 'b component -> 'b t
+
+  val monad_map : ('a -> 'a) -> 'a t -> 'a t
 
   val iter : 'a t -> f:('a -> unit) -> unit
 
@@ -63,13 +79,25 @@ module Typed : sig
 
   val set : 'a t -> 'a -> unit
 
+  val has : 'a t -> 'b component -> bool
+
   val select : 'a component -> 'a t list
+
+  val map : 'a component -> f:('a t -> 'a) -> unit
 end
 
 module Infix : sig
+  val ( >? ) : Entity.t -> 'a component -> 'a option
+
+  val ( >! ) : Entity.t -> 'a component -> 'a
+
   val ( !! ) : 'a Typed.t -> 'a
 
   val ( =: ) : 'a Typed.t -> 'a -> unit
+
+  val ( >>? ) : 'a Typed.t -> 'b component -> 'b Typed.t option
+
+  val ( >>! ) : 'a Typed.t -> 'b component -> 'b Typed.t
 end
 
 module Syntax : sig

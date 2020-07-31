@@ -10,7 +10,7 @@ struct
   open Ecs.Infix
   include Player
 
-  let make_new_player ~name ~client =
+  let make_new_player ~name =
     let room = World.spawn_room None in
     {
       name;
@@ -20,30 +20,33 @@ struct
       stored_ammo = 12;
       target = None;
       inventory = Dict.create (module Ecs.Entity);
-      client;
     }
 
-  let new_player client current_players =
+  let new_player current_players =
     let name = new_name current_players in
-    make_new_player ~name ~client
+    make_new_player ~name
 
   let unaim_aiming_at target_player =
-    Ecs.map Components.player ~f:(fun player ->
-        match player.target with
-        | Some target_player' when Ecs.Typed.(target_player = target_player') ->
-            { player with target = None }
-        | Some _ -> player
-        | None -> player)
+    Ecs.Typed.map Components.player ~f:(fun source_player ->
+        let updated =
+          let ( let* ) = Option.( >>= ) in
+          let* source_target = !!source_player.target in
+          let* source_target_player = source_target >>? Components.player in
+          if Ecs.Typed.(target_player = source_target_player) then (
+            send source_player "Your target ran out of your sights!";
+            Some { !!source_player with target = None } )
+          else None
+        in
+        match updated with Some update -> update | None -> !!source_player)
 
   let die ~source ~target =
     let old_player = !!target in
-    let player' = make_new_player ~name:!!target.name ~client:!!target.client in
+    let player' = make_new_player ~name:!!target.name in
     unaim_aiming_at target;
     target =: player';
     send target "You died! :-(";
     List.init old_player.stored_ammo ~f:(fun _ ->
-        ignore
-        @@ Ecs.Typed.make Components.item (Item.make Bullet old_player.room))
+        ignore @@ Item.make Bullet old_player.room)
     |> List.iter ~f:Fn.id;
     Dict.incr World.kills (Ecs.Typed.entity source);
     Dict.incr World.deaths (Ecs.Typed.entity target);
@@ -57,20 +60,14 @@ struct
       true )
     else false
 
+  let shoot_event, do_shoot = React.E.create ()
+
+  let shooting_handler = React.E.map (Shooting.handle damage) shoot_event
+
   let fire source =
     match !!source.target with
     | None -> send source "You aren't aiming at anyone!"
-    | Some target ->
-        if !!source.loaded_ammo < 1 then send source "Your gun isn't loaded!"
-        else (
-          decr_ammo source;
-          send source (Printf.sprintf "You shot %s!" !!target.name);
-          let target_message =
-            Printf.sprintf "You were shot by %s!" !!source.name
-          in
-          send target target_message;
-          let killed = damage ~source ~target 20 in
-          if killed then send source "You killed them!" )
+    | Some target -> do_shoot (source, target)
 
   let scoreboard player =
     let open Dict.Infix in

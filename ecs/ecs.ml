@@ -39,9 +39,17 @@ let component _m =
   component_maps := Hmap.add c (Dict.create (module Int)) !component_maps;
   c
 
+let get t component =
+  let component_map = Hmap.get component !component_maps in
+  component_map.@?[t]
+
 let get_exn t component =
   let component_map = Hmap.get component !component_maps in
   component_map.@![t]
+
+let has t component =
+  let component_map = Hmap.get component !component_maps in
+  Dict.mem component_map t
 
 let set t component value =
   let component_map = Hmap.get component !component_maps in
@@ -69,6 +77,10 @@ let select2i c1 c2 =
 let filter component ~f =
   Hmap.get component !component_maps |> Dict.filter_inplace ~f
 
+let filteri component ~f =
+  Hmap.get component !component_maps
+  |> Dict.filteri_inplace ~f:(fun ~key ~data -> f key data)
+
 let map component ~f = Hmap.get component !component_maps |> Dict.map_inplace ~f
 
 let mapi component ~f =
@@ -77,6 +89,10 @@ let mapi component ~f =
 
 let filter_map component ~f =
   Hmap.get component !component_maps |> Dict.filter_map_inplace ~f
+
+let filter_mapi component ~f =
+  Hmap.get component !component_maps
+  |> Dict.filter_mapi_inplace ~f:(fun ~key ~data -> f key data)
 
 let iter component ~f = Hmap.get component !component_maps |> Dict.iter ~f
 
@@ -87,30 +103,61 @@ module Typed = struct
 
   let ( = ) t t' = Entity.(entity t = entity t')
 
+  let make component value =
+    let entity = create component value in
+    (component, entity)
+
+  let of_entity entity component =
+    match get entity component with
+    | Some _value -> Some (component, entity)
+    | None -> None
+
+  let coerce t component =
+    let entity = entity t in
+    of_entity entity component
+
+  let of_entity_exn entity component =
+    let _value = get_exn entity component in
+    (component, entity)
+
+  let coerce_exn t component =
+    let entity = entity t in
+    of_entity_exn entity component
+
   let get (component, entity) = get_exn entity component
 
   let set (component, entity) value = set entity component value
 
-  let make component value =
-    let entity = create component value in
-    (component, entity)
+  let has (_type_component, entity) component = has entity component
+
+  let monad_map f (component, entity) =
+    make component (f (get (component, entity)))
 
   let select component =
     List.map
       ~f:(fun (entity, _value) -> (component, entity))
       (selecti component)
 
-  let map f (component, entity) = make component (f (get (component, entity)))
+  let map component ~f =
+    mapi component ~f:(fun entity _value -> f (component, entity))
 
   let iter (component, _entity) ~f = iter component ~f
 end
 
 module Infix = struct
+  let ( >? ) = get
+
+  let ( >! ) = get_exn
+
   let ( !! ) = Typed.get
 
   let ( =: ) = Typed.set
+
+  let ( >>? ) = Typed.coerce
+
+  let ( >>! ) = Typed.coerce_exn
 end
 
 module Syntax = struct
-  let ( let+ ) x f = Typed.map f x
+  let ( let+ ) x f = Typed.monad_map f x
 end

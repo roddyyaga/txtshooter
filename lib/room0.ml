@@ -5,5 +5,4 @@ type t = {
   south: t Ecs.Typed.t option;
   west: t Ecs.Typed.t option;
   east: t Ecs.Typed.t option;
-  contents: (Ecs.Entity.t, int) Dict.t;
 }

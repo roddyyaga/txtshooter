@@ -16,7 +16,9 @@ let new_name players =
     ~f:(fun name -> not (List.mem current_names name ~equal:String.equal))
     possible_names
 
-let send player message = Network.send !!player.client message
+let send player message =
+  let client = Ecs.(get_exn (Typed.entity player) Components.client) in
+  Network.send client message
 
 let look player =
   let message = !!player.room |> Room.look !!player in
@@ -41,16 +43,43 @@ let find_by_name name =
 let aim source name =
   let target = find_by_name name in
   let message =
-    match target with
-    | Some target -> (
-        match
-          Room.reachable ~source:!!source.room ~destination:!!target.room
-        with
-        | true ->
-            source =: { !!source with target = Some target };
-            Printf.sprintf "You aim your gun at %s." !!target.name
-        | false -> Printf.sprintf "%s is not in range!" !!target.name )
-    | None -> "There is no player with that name..."
+    let possible_player_target =
+      match target with
+      | Some target -> (
+          match
+            Room.reachable ~source:!!source.room ~destination:!!target.room
+          with
+          | true -> (
+              let open Ecs.Infix in
+              match target >>? Components.targetable with
+              | Some _ -> Ok target
+              | None -> Error "That player can't be targeted!" )
+          | false -> Error (Printf.sprintf "%s is not in range!" !!target.name)
+          )
+      | None -> Error "There is no player with that name..."
+    in
+
+    match possible_player_target with
+    | Ok target ->
+        source
+        =: { !!source with target = Some (target >>! Components.targetable) };
+        Printf.sprintf "You aim your gun at %s." !!target.name
+    | Error message -> (
+        let item_and_targetable =
+          !!source.room |> Room.contents
+          |> List.filter_map ~f:(fun item ->
+                 if String.(!!item.Item0.name = name) then
+                   match item >>? Components.targetable with
+                   | Some targetable -> Some (item, targetable)
+                   | None -> None
+                 else None)
+          |> List.hd
+        in
+        match item_and_targetable with
+        | Some (item, targetable) ->
+            source =: { !!source with target = Some targetable };
+            Printf.sprintf "You aim your gun at the %s." !!item.Item0.name
+        | None -> message )
   in
   send source message
 
@@ -65,7 +94,12 @@ let unknown_command source message =
   Printf.sprintf "Unknown command '%s'" message |> send source
 
 let unaim_if_out_of_range player =
-  match !!player.target with
+  let target_player =
+    match !!player.target with
+    | Some target -> Ecs.Infix.(target >>? Components.player)
+    | None -> None
+  in
+  match target_player with
   | Some target ->
       if not (Room.reachable ~source:!!player.room ~destination:!!target.room)
       then (

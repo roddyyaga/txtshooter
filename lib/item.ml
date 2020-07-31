@@ -1,9 +1,9 @@
-type t = { name: string; description: string option; room: Room0.t Ecs.Typed.t }
-
-type item = Bullet
-
-let make item room =
-  let name, description =
-    match item with Bullet -> ("bullet", Some "a bullet")
+let make item_tag room =
+  let item = Ecs.Typed.make Components.item (Item0.make item_tag) in
+  Ecs.set (Ecs.Typed.entity item) Components.location room;
+  let () =
+    match item_tag with
+    | Barrel -> Ecs.set (Ecs.Typed.entity item) Components.targetable ()
+    | _ -> ()
   in
-  { name; description; room }
+  item
