@@ -72,8 +72,9 @@ let look looking_player room =
         let names_string =
           players
           |> List.map ~f:(fun p ->
-                 if Player0.(p = looking_player) then p.Player0.name
-                 else Printf.sprintf "%s (you)" p.Player0.name)
+                 if Player0.(p = looking_player)
+                 then Printf.sprintf "%s (you)" p.Player0.name
+          else p.Player0.name)
           |> Utils.list_with_and
         in
         Printf.sprintf "In here %s %s." (are players) names_string
